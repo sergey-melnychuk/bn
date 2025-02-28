@@ -5,8 +5,8 @@ use bn::*;
 fn main() {
     let mut a = G1::one();
     let mut b = G2::one();
-    let c = Fr::from_str("1901").unwrap().inverse().unwrap();
-    let d = Fr::from_str("2344").unwrap().inverse().unwrap();
+    let c = Fr::from_dec("1901").unwrap().inverse().unwrap();
+    let d = Fr::from_dec("2344").unwrap().inverse().unwrap();
 
     let mut acc1 = Gt::one();
     for i in 0..10000 {

@@ -1,7 +1,6 @@
 use std::cmp::Ordering;
 use rand::Rng;
 
-use rustc_serialize::{Encodable, Encoder, Decodable, Decoder};
 use byteorder::{ByteOrder, BigEndian};
 
 /// 256-bit, stack allocated biginteger for use in prime field
@@ -18,6 +17,7 @@ pub struct U512(pub [u64; 8]);
 
 impl U512 {
     /// Multiplies c1 by modulo, adds c0.
+    #[allow(dead_code)]
     pub fn from(c1: &U256, c0: &U256, modulo: &U256) -> U512 {
         let mut res = [0; 8];
 
@@ -94,67 +94,6 @@ impl U512 {
         }
 
         U512(n)
-    }
-}
-
-impl Encodable for U512 {
-    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        let mut buf = [0; (8 * 8)];
-
-        for (l, i) in (0..8).rev().zip((0..8).map(|i| i * 8)) {
-            BigEndian::write_u64(&mut buf[i..], self.0[l]);
-        }
-
-        for i in 0..(8 * 8) {
-            try!(s.emit_u8(buf[i]));
-        }
-
-        Ok(())
-    }
-}
-
-impl Decodable for U512 {
-    fn decode<S: Decoder>(s: &mut S) -> Result<U512, S::Error> {
-        let mut buf = [0; (8 * 8)];
-
-        for i in 0..(8 * 8) {
-            buf[i] = try!(s.read_u8());
-        }
-
-        Ok(U512::interpret(&buf))
-    }
-}
-
-impl Encodable for U256 {
-    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        let mut buf = [0; (4 * 8)];
-
-        for (l, i) in (0..4).rev().zip((0..4).map(|i| i * 8)) {
-            BigEndian::write_u64(&mut buf[i..], self.0[l]);
-        }
-
-        for i in 0..(4 * 8) {
-            try!(s.emit_u8(buf[i]));
-        }
-
-        Ok(())
-    }
-}
-
-impl Decodable for U256 {
-    fn decode<S: Decoder>(s: &mut S) -> Result<U256, S::Error> {
-        let mut buf = [0; (4 * 8)];
-
-        for i in 0..(4 * 8) {
-            buf[i] = try!(s.read_u8());
-        }
-
-        let mut n = [0; 4];
-        for (l, i) in (0..4).rev().zip((0..4).map(|i| i * 8)) {
-            n[l] = BigEndian::read_u64(&buf[i..]);
-        }
-
-        Ok(U256(n))
     }
 }
 
@@ -333,6 +272,28 @@ impl U256 {
             int: &self,
             n: 256
         }
+    }
+
+    pub fn into_hex(&self) -> String {
+        self.0.iter()
+            .map(|x| hex::encode(&x.to_le_bytes()))
+            .collect::<Vec<_>>()
+            .join("")
+    }
+
+    pub fn from_hex(x: &str) -> Option<Self> {
+        let mut bin = hex::decode(x).ok()?;
+        bin.resize(32, 0);
+
+        let mut ret = [0u64; 4];
+        let mut int = [0u8; 8];
+
+        for i in 0..4 {
+            int.copy_from_slice(&bin[i..(i+8)]);
+            ret[i] = u64::from_le_bytes(int);
+        }
+
+        Some(Self(ret))
     }
 }
 

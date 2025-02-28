@@ -2,9 +2,7 @@ use rand::Rng;
 use std::ops::{Add, Sub, Mul, Neg};
 use super::FieldElement;
 
-use rustc_serialize::{Encodable, Encoder, Decodable, Decoder};
-
-use arith::{U512, U256};
+use arith::{U256, U512};
 
 macro_rules! field_impl {
     ($name:ident, $modulus:expr, $rsquared:expr, $rcubed:expr, $one:expr, $inv:expr) => {
@@ -16,27 +14,22 @@ macro_rules! field_impl {
             #[inline]
             fn from(mut a: $name) -> Self {
                 a.0.mul(&U256::one(), &U256($modulus), $inv);
-                
                 a.0
             }
         }
 
-        impl Encodable for $name {
-            fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-                let normalized = U256::from(*self);
-
-                normalized.encode(s)
-            }
-        }
-
-        impl Decodable for $name {
-            fn decode<S: Decoder>(s: &mut S) -> Result<$name, S::Error> {
-                $name::new(try!(U256::decode(s))).ok_or_else(|| s.error("integer is not less than modulus"))
-            }
-        }
-
+        #[allow(dead_code)]
         impl $name {
-            pub fn from_str(s: &str) -> Option<Self> {
+            pub fn into_hex(&self) -> String {
+                self.0.into_hex()
+            }
+        
+            pub fn from_hex(x: &str) -> Option<Self> {
+                let val = U256::from_hex(x)?;
+                Some($name(val))
+            }
+        
+            pub fn from_dec(s: &str) -> Option<Self> {
                 let ints: Vec<_> = {
                     let mut acc = Self::zero();
                     (0..11).map(|_| {let tmp = acc; acc = acc + Self::one(); tmp}).collect()
@@ -62,7 +55,6 @@ macro_rules! field_impl {
             pub fn new(mut a: U256) -> Option<Self> {
                 if a < U256($modulus) {
                     a.mul(&U256($rsquared), &U256($modulus), $inv);
-
                     Some($name(a))
                 } else {
                     None
@@ -106,7 +98,6 @@ macro_rules! field_impl {
                 } else {
                     self.0.invert(&U256($modulus));
                     self.0.mul(&U256($rcubed), &U256($modulus), $inv);
-
                     Some(self)
                 }
             }
@@ -114,44 +105,36 @@ macro_rules! field_impl {
 
         impl Add for $name {
             type Output = $name;
-
             #[inline]
             fn add(mut self, other: $name) -> $name {
                 self.0.add(&other.0, &U256($modulus));
-
                 self
             }
         }
 
         impl Sub for $name {
             type Output = $name;
-
             #[inline]
             fn sub(mut self, other: $name) -> $name {
                 self.0.sub(&other.0, &U256($modulus));
-
                 self
             }
         }
 
         impl Mul for $name {
             type Output = $name;
-
             #[inline]
             fn mul(mut self, other: $name) -> $name {
                 self.0.mul(&other.0, &U256($modulus), $inv);
-
                 self
             }
         }
 
         impl Neg for $name {
             type Output = $name;
-
             #[inline]
             fn neg(mut self) -> $name {
                 self.0.neg(&U256($modulus));
-
                 self
             }
         }
@@ -184,20 +167,16 @@ pub fn const_fq(i: [u64; 4]) -> Fq {
 #[test]
 fn test_rsquared() {
     let rng = &mut ::rand::thread_rng();
-
     for _ in 0..1000 {
         let a = Fr::random(rng);
         let b: U256 = a.into();
         let c = Fr::new(b).unwrap();
-
         assert_eq!(a, c);
     }
-
     for _ in 0..1000 {
         let a = Fq::random(rng);
         let b: U256 = a.into();
         let c = Fq::new(b).unwrap();
-
         assert_eq!(a, c);
     }
 }

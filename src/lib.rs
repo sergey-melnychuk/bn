@@ -1,5 +1,4 @@
 extern crate rand;
-extern crate rustc_serialize;
 extern crate byteorder;
 
 mod arith;
@@ -12,7 +11,7 @@ use groups::GroupElement;
 use std::ops::{Add, Sub, Mul, Neg};
 use rand::Rng;
 
-#[derive(Copy, Clone, PartialEq, Eq, RustcDecodable, RustcEncodable)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 pub struct Fr(fields::Fr);
 
@@ -21,12 +20,21 @@ impl Fr {
     pub fn one() -> Self { Fr(fields::Fr::one()) }
     pub fn random<R: Rng>(rng: &mut R) -> Self { Fr(fields::Fr::random(rng)) }
     pub fn pow(&self, exp: Fr) -> Self { Fr(self.0.pow(exp.0)) }
-    pub fn from_str(s: &str) -> Option<Self> { fields::Fr::from_str(s).map(|e| Fr(e)) }
     pub fn inverse(&self) -> Option<Self> { self.0.inverse().map(|e| Fr(e)) }
     pub fn is_zero(&self) -> bool { self.0.is_zero() }
     pub fn interpret(buf: &[u8; 64]) -> Fr {
         Fr(fields::Fr::interpret(buf))
     }
+
+    pub fn into_hex(&self) -> String {
+        self.0.into_hex()
+    }
+
+    pub fn from_hex(x: &str) -> Option<Self> {
+        let val = fields::Fr::from_hex(x)?;
+        Some(Fr(val))
+    }
+
 }
 
 impl Add<Fr> for Fr {
@@ -54,8 +62,6 @@ impl Mul for Fr {
 }
 
 pub trait Group:
-        rustc_serialize::Encodable +
-        rustc_serialize::Decodable +
         'static +
         Send +
         Sync +
@@ -76,7 +82,7 @@ pub trait Group:
     fn normalize(&mut self);
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, RustcDecodable, RustcEncodable)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 pub struct G1(groups::G1);
 
@@ -119,7 +125,7 @@ impl Mul<Fr> for G1 {
     fn mul(self, other: Fr) -> G1 { G1(self.0 * other.0) }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, RustcDecodable, RustcEncodable)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 pub struct G2(groups::G2);
 

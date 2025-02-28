@@ -17,7 +17,7 @@ fn random_test_doubling<G: GroupElement, R: Rng>(rng: &mut R) {
     for _ in 0..50 {
         let r1 = G::random(rng);
         let r2 = G::random(rng);
-        let ti = Fr::from_str("2").unwrap().inverse().unwrap();
+        let ti = Fr::from_dec("2").unwrap().inverse().unwrap();
 
         assert_eq!((r1 + r2) + r1, r1.double() + r2);
         assert_eq!(r1, r1.double() * ti);
@@ -66,7 +66,7 @@ fn random_test_equality<G: GroupElement, R: Rng>(rng: &mut R) {
 
         let ai = a.inverse().unwrap();
         let ci = c.inverse().unwrap();
-        let ti = Fr::from_str("2").unwrap().inverse().unwrap();
+        let ti = Fr::from_dec("2").unwrap().inverse().unwrap();
 
         for _ in 0..10 {
             acc = acc * ti;
@@ -85,7 +85,7 @@ fn random_test_equality<G: GroupElement, R: Rng>(rng: &mut R) {
 pub fn group_trials<G: GroupElement>() {
     assert!(G::zero().is_zero());
     assert!((G::one() - G::one()).is_zero());
-    assert_eq!(G::one() + G::one(), G::one() * Fr::from_str("2").unwrap());
+    assert_eq!(G::one() + G::one(), G::one() * Fr::from_dec("2").unwrap());
     assert!(G::zero().double().is_zero());
 
     assert!((G::one() * (-Fr::one()) + G::one()).is_zero());
